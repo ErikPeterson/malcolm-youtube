@@ -1,0 +1,48 @@
+body{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  top: 0;
+  left: 0;
+  background-color: black;
+}
+
+.player-container{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.player{
+  width: 100%;
+  height: auto;
+}
+
+.player > iframe{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  transition: opacity 1.5s;
+}
+
+.player > iframe.active {
+  z-index: 2;
+  opacity: 1;
+}
+
+.player > iframe.fading{
+ opacity: 0;
+ z-index: 3;
+}
+
+.player > iframe.loading{
+ opacity: 0;
+ z-index: 3
+}
+
