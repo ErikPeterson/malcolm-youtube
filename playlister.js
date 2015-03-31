@@ -4,35 +4,175 @@
   * domready (c) Dustin Diaz 2014 - License MIT
   */
 !function(e,t){typeof module!="undefined"?module.exports=t():typeof define=="function"&&typeof define.amd=="object"?define(t):this[e]=t()}("domready",function(){var e=[],t,n=document,r=n.documentElement.doScroll,i="DOMContentLoaded",s=(r?/^loaded|^c/:/^loaded|^i|^c/).test(n.readyState);return s||n.addEventListener(i,t=function(){n.removeEventListener(i,t),s=1;while(t=e.shift())t()}),function(t){s?t():e.push(t)}})
+
+
 /*!
  * Playlister Erik Sälgström Peterson - License GPLv2
  */
 
 var App = {
-	playerstarted: false,
+	dataReady: false,
 	videoIds: [],
+	playedIds: [],
+	players: [],
 	init: function(){
+			App.playerEls = Array.prototype.slice.call(document.querySelectorAll('.player'));
+			App.startPlayerDL();
 			App.fetchPlaylist();
 	},
 	fetchPlaylist: function(page){
 		var pagestring = page ? '&pageToken=' + page : '';
 
 
-		qwest.get('https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyA5HHEOIo-Mo9HA2g6750fw9WXQPV-NFnQ&playlistId=PLArvEia7B_Fyn_GeKqv4s1iBwuYL1Mem-&part=snippet&maxResults=50'+pagestring)
+		qwest.get('https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAnaVQcV3CqZF3a4L-ql1lf5VpVx6pC-KQ&playlistId=PLArvEia7B_Fyn_GeKqv4s1iBwuYL1Mem-&part=snippet,contentDetails&maxResults=50'+pagestring)
 			.then(function(resp){
 				var data = JSON.parse(resp);
 				var ids = data.items.map(function(item){ return item.snippet.resourceId.videoId; });
 	
 				App.videoIds = App.videoIds.concat(ids);
-				if(!App.playerstarted) App.startPlayer();
-				if(data.nextPageToken) App.fetchPlaylist(data.nextPageToken);
+				App.dataReady = true;
+				if(data.nextPageToken) return App.fetchPlaylist(data.nextPageToken);
 			});
 	},
-	startPlayer: function(){
-		this.playerstarted = true;
+	startPlayerDL: function(){
+		var tag = document.createElement('script');
+			tag.src = "https://www.youtube.com/iframe_api";
+		var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-		console.log('playerstarted');
+		window.onYouTubeIframeAPIReady = function(){
+			App.makePlayers();
+		};
+
+	},
+	makePlayers: function(){
+		if(!App.dataReady) return window.setTimeout(App.makePlayers, 100)
+		var counter = 3;
+		console.log('making players');
+		App.playerEls.forEach(function(el, i){
+
+			App.players.push(new Player(el, App.popId()));
+			App.players[i].on('ready', function(){
+				console.log('ready triggered')
+				counter--;
+				console.log(counter);
+				App.players[i].off('ready');
+				if(counter === 0) App.startPlayer();
+			});
+		});
+	},
+	startPlayer: function(){
+		App.players[0].play();
+		window.setTimeout(App.advancePlayer, 2000);
+	},
+	advancePlayer: function(){
+		if(!App.players[1].videoReady) return window.setTimeout(App.advancePlayer, 100);
+		console.log('advancing players');
+
+		App.players[1].play();
+		App.players[0].stop(App.popId());
+		App.players.push(App.players.shift());
+		window.setTimeout(App.advancePlayer, 2000);
+	},
+	popId: function(){
+		var index = Math.floor( Math.random() * App.videoIds.length);
+		var id = App.videoIds[index];
+		App.playedIds.push(id);
+		App.videoIds.splice(index, 1);
+
+		return id;
 	}
 };
+
+var Player = function(el, first){
+	console.log("creating player object")
+	var self = this;
+	this.events = {};
+	this.el = el;
+	this.yt = new YT.Player(el, {height: 390, width: 640});
+	this.videoReady = false;
+	this.yt.addEventListener('onReady', function loader(e){
+		console.log('video on ready called');
+		self.queue(e.target);
+	});
+	this.yt.addEventListener('onError', function(){
+		self.load(App.popId());
+	});
+};
+
+Player.prototype.queue = function(player){
+	var self = this;
+	player.mute();
+
+	this.yt.addEventListener('onStateChange', function queuer(e){
+		if(e.data !== 1) return;
+		self.yt.removeEventListener('onStateChange', 'queuer');
+		e.target.pauseVideo();
+		
+		var duration,
+			start;
+		
+		duration = e.target.getDuration();
+		start = start = Math.floor(Math.random() * (duration - 5)) + 2;
+		e.target.seekTo(start, true);
+		self.videoReady = true;
+		self.trigger('ready');
+	});
+
+	player.playVideo();
+};
+
+Player.prototype.load = function(id){
+	console.log("loading video")
+	var self = this;
+	this.videoReady = false;
+	this.yt.cueVideoById({videoId: id});
+	this.yt.addEventListener('onStateChange', function bufferer(e){
+		if(e.data !== 5) return
+		self.queue(e.target);
+	})
+};
+
+Player.prototype.play = function(){
+	console.log("player.play called")
+	this.yt.playVideo();
+	this.el.setAttribute('class', 'player playing');
+};
+
+Player.prototype.stop = function(id){
+	var self = this;
+	this.el.setAttribute('class', 'player loading');
+	window.setTimeout(function(){
+		self.yt.stopVideo();
+		self.load(id);
+	}, 500);
+};
+
+Player.prototype.off = function(event, fn){
+	if(!this.events[event]) return;
+	if(!fn) return this.events[event] = [];
+	this.events[event].some(function(e,i){
+		if(e.fn === fn){
+			this.events[event].splice(i, 1);
+			return true;
+		}
+		return false;
+	});
+};
+
+Player.prototype.on = function(event, fn, self){
+	this.events[event] = this.events[event] || [];
+	this.events[event].push({fn: fn, self: self});
+};
+
+Player.prototype.trigger = function(event){
+	var self = this;
+	if(!this.events[event]) return;
+	this.events[event].forEach(function(e){
+		var context = e.self || self;
+		e.fn.call(self);
+	});
+};
+
 
 domready(function(){App.init();});

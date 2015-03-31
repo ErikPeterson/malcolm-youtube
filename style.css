@@ -20,29 +20,14 @@ body{
 .player{
   width: 100%;
   height: auto;
+  transition: opacity .5s;
 }
 
-.player > iframe{
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: auto;
-  transition: opacity 1.5s;
-}
-
-.player > iframe.active {
-  z-index: 2;
+.player.playing{
   opacity: 1;
 }
 
-.player > iframe.fading{
- opacity: 0;
- z-index: 3;
-}
-
-.player > iframe.loading{
- opacity: 0;
- z-index: 3
+.player.loading{
+  opacity: 0;
 }
 
