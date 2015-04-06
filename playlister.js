@@ -10,6 +10,94 @@
  * Playlister Erik Sälgström Peterson - License GPLv2
  */
 
+var MobileApp = {
+	urls: [],
+	imgs: [],
+	playedUrls: [],
+	dataReady: false,
+	init: function(){
+		MobileApp.playerEls = Array.prototype.slice.call(document.querySelectorAll('.player'));
+		MobileApp.fetchPlaylist();
+	},
+	fetchPlaylist: function(page){
+		var pagestring = page ? '&pageToken=' + page : '';
+		var sizes = ['maxres','high','medium', 'default'];
+
+		qwest.get('https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAnaVQcV3CqZF3a4L-ql1lf5VpVx6pC-KQ&playlistId=PLArvEia7B_Fyn_GeKqv4s1iBwuYL1Mem-&part=snippet,contentDetails&maxResults=50'+pagestring)
+			.then(function(resp){
+				var data = JSON.parse(resp);
+
+				var urls = data.items.map(function(vid){ 
+
+					var size = sizes.filter(function(siz){ return vid.snippet.thumbnails[siz] !== undefined;})[0];
+					return vid.snippet.thumbnails[size].url;
+				});
+
+				MobileApp.urls = MobileApp.urls.concat(urls);
+				
+				if(!MobileApp.dataReady){
+					MobileApp.dataReady = true;
+					MobileApp.startDl();
+				}
+				
+				if(data.nextPageToken) return MobileApp.fetchPlaylist(data.nextPageToken);	
+		});
+	},
+	startDl: function(){
+		var len = MobileApp.playerEls.length - 1;
+		MobileApp.playerEls.forEach(function(el){
+			var img = new Image();
+				img.src = MobileApp.popId();
+			el.appendChild(img);
+			MobileApp.imgs.push(img);
+
+			img.addEventListener('load', function(e){
+				len--;
+				e.target.dataset.loaded = true;
+				if(len === 0) MobileApp.play();
+			});
+		});
+	}, 
+	play: function(){
+		this.imgs[0].parentElement.setAttribute('class', 'player playing');
+		window.setTimeout(this.advancePlayer.bind(this), 1500);
+	},
+	advancePlayer: function(){
+		var self = this;
+
+		if(!this.imgs[1].dataset.loaded) {
+			this.moveToBack(this.imgs[1])
+			return this.advancePlayer();
+		}
+		this.imgs[0].parentElement.setAttribute('class', 'player loading');
+		this.imgs[1].parentElement.setAttribute('class', 'player playing');
+		
+		window.setTimeout(function(){
+			self.imgs[0].dataset.loaded = false;
+			self.imgs[0].src = MobileApp.popId();
+			self.imgs.push(self.imgs.shift());
+			self.advancePlayer();
+		}, 1500)
+	},
+	popId: function(){
+		if(MobileApp.urls.length === 0){
+			MobileApp.urls = MobileApp.playedUrls;
+			MobileApp.playedUrls = [];
+		}
+		var index = Math.floor( Math.random() * MobileApp.urls.length);
+		var id = MobileApp.urls[index];
+		MobileApp.playedUrls.push(id);
+		MobileApp.urls.splice(index, 1);
+
+		return id;
+	},
+	moveToBack: function(img){
+		var index = this.imgs.indexOf(img);
+		if(index == -1) return;
+		this.imgs.push(this.imgs.splice(index, 1)[0]);
+	}
+}
+
 var App = {
 	dataReady: false,
 	videoIds: [],
@@ -24,19 +112,19 @@ var App = {
 		var pagestring = page ? '&pageToken=' + page : '';
 
 
-		// qwest.get('https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAnaVQcV3CqZF3a4L-ql1lf5VpVx6pC-KQ&playlistId=PLArvEia7B_Fyn_GeKqv4s1iBwuYL1Mem-&part=snippet,contentDetails&maxResults=50'+pagestring)
-		// 	.then(function(resp){
-		// 		var data = JSON.parse(resp);
-		// 		var ids = data.items.map(function(item){ return item.snippet.resourceId.videoId; });
+		qwest.get('https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAnaVQcV3CqZF3a4L-ql1lf5VpVx6pC-KQ&playlistId=PLArvEia7B_Fyn_GeKqv4s1iBwuYL1Mem-&part=snippet,contentDetails&maxResults=50'+pagestring)
+			.then(function(resp){
+				var data = JSON.parse(resp);
+				var ids = data.items.map(function(item){ return item.snippet.resourceId.videoId; });
 	
-		// 		App.videoIds = App.videoIds.concat(ids);
-		// 		if(data.nextPageToken) return App.fetchPlaylist(data.nextPageToken);
-		// 		App.dataReady = true;
-		// 		console.log(App.videoIds);
-		// 	});
+				App.videoIds = App.videoIds.concat(ids);
+				if(data.nextPageToken) return App.fetchPlaylist(data.nextPageToken);
+				App.dataReady = true;
+				
+			});
 
-		App.videoIds = ["vCp1SjqiE7E","sAVG7rOwiro","xPFjYvZzjEI","kEXZryVOL7Q","CRGBC_EwUCQ","m3Cwqh7sCUM","ACoM-MQ6d0I","bwGz8UFRjeM","0XAI6g-NFkA","d8ZX_PgsdXA","bPDIwMLGqds","1q0OoD2yego","GEOB9eVkRT0","DzsHXX5u2v0","j_L2z0WUqSE","HbZSMZAUCrs","bOYwa2V4mlQ","FnI9OqvuodY","kw7lJ025xYA","o4d8k5U12-k","FPKEC3Hz-tY","v-_SRdkLOJU","bnYEWTaPsC4","U3JEtHZQpaM","CNc0ozETp7U","h309jv-FDro","rkxlvWi3KXc","7Ei8TejYHFs","8egR8xtzvcU","lSRmaMo6d40","s_64FvOnVfY","gn_2__EHjLI","ZRSI2qMz6C0","EiRnJ9ft4WE","ub2QswEBuUI","cdxr3PpErjg","TcX-CBrF9m4","Od06OFzHJJM","Wr4HaaekU6Y","mR-aBIQOCew","yoeLAq_3oKA","gNIXffiELsg","J8bknQjTqKw","sMG6cBm4ROA","c9w1s54isnM","_nh9DJAw2EA","FWQMJPgBm2Q","861B_axO500","P7tdNWzZ004","sh6du1X_sAA","RiRvTnC90jA","7NfSK8fG0K4","9TxzwbV7y6E","dHy5YjdV87k","ZR7tRS0CZ1c","whnS1uokkxU","pZQIb5xAFoQ","jM3gfwqIqDs","9mz7Cdgt1PU","hxfoOsRQGkM","mX1KCfHNmHo","-YYBCNQnYNM","zMk0zt9o87Q","ZJHcIN-KGFQ","oAhvy__nxkk","FeDrfuJXW6Y","WD0LMeUyYVM","MbCHZwQBPR8","DAVaUtB2lUQ","Mj_VnC5grFE","rSl76NfnJkY","VNXXFyCuroY","OZzoIqle1eI","7sPG0m0kHsY","5gQ7VR3FpV4","PNUbXFuEqvs","A_uK2a7sXZo","8TdIVp9r6Zw","UCoCcCvFbZ8","bkqH3eLOsXI","eBdSo-RkYvw","bA-DEYrrLH0","Gc3Gm-3-UkY","KXCiduEnDIY","-EDenXPeARU","POe0Rz2uxBI","5pNtjOYkAbA","FM8OVyPJILQ","bkNu_1TM2R8","jm2cbiN1wTs","94KzmB2bI7s","A-oxWXLhVRk","AKxrB6Vv9o8","ouAUo9jVtAU","lv7HZBKkKow","SYMvOxIsES4","h8DdqWicbeI","vA4Y4kSzGNE","h4eD7TlTNCU","svDl8BwRt4I","99xwiXAJnzQ","UBq1R6BzNBg","ehPjfpY4jcs","q6eIqNpdvlw","BKES8LNvIFs","70uP7oz6y_w","I62EQ5xbDZg","vfuO87nnENc","rrCiRmegR40","0g4UBeaG5fs","8wM5dDvQRI8","EGfxeCtE33c","gE9Omyg6gIE","7GQJCmZF2eQ","nqM_NArVYbc","WBSM2JvFqKM","_akyfMp9ln8","UPhIlT0H0CI","Mk94qHh-eTg","wJLjv19GJrc","pzKTVdzRebQ","TSwQOf4V3fE","90cj4NX87Yk","KdV1MhJtEjM","OBmhoGRDuOE","3csi-2Hrzhg","kWadDtIFPNs","sY6z2hLgYuY","afqDyRROHiQ","1tBOmG0QMbA","GAwoq5Ksb94","XHSU8TZKQ2M","f1aae4AZ080","6FridXUHwYw","TPDQPVxdWik","mqd-aFZ3yqY","-8YpoP7yRE8","hyTw_2qZwYo","dEXYHJ5ZjM8","eHfO8pmaXMg","4EsWHZwwz20","epTxTn7ZfnI","hXeWKsKOI5Y","Hd8SSpqwLtY","RmB1tH6ANiU","1l2CcH0vHDc","MZANi-5a_jU","_xXhTkBpr6E","QLTuKkj3XpY","xir670oorIo","XdKlmyfp5_w","NBG-Dvq9ypM","JJ-J2YD2hSU","rrN2lgRjcrg","CpQ6pqyNw2I","EM4HfNpxSOo","fbk1Kmki5sg","N8gxND1kX6k","4akYMtKfsYE","QwTr0dw2FbQ","BW_JNXwO7dE","-5ICoZOED0g","pHuvs9Qqa5o","aJV5mH3YY70","vWGzRnxGig4","qw0_CFg6paY","hWumOPH2uMY","k6GSMDU5sk4","hZUZqkPMXX8","kBhKSj3qI_0","jTwDF3hUq18","54acHHUqObM","QhZjHmK3Gew","edLA_YHP7Y8","-c-tqai7br0","IfuyaMYapkY","7IPceA0ILAg","GIWapF93q6w","eU4gzQ1iJAU","AZkPC2p8rDg","1Fg11nIIK4w","gKCawALGeXw","vHnZsouY3U8","HyzCauRk6Iw","5diKdBZ8EOI","qsBwVKtvrpg","ZzDrheWDhGw","RocLdMyUG-4","yUKWG11humE","aFsNz5VMyC8","xWRRAw6xzos","LnbavAYULUU","1QW32aiAmPM","2r2a3ryCBYw","0rtB4oNlhqo","GAovNxb_ayE","3b69l1at84A","qgTiERP8bTM","Lf-Y7V2HSzE","f2vWqsLPP4Q","gO5gPdJxe_o","9pG-aENEhpI","9ePQkEvS7ZA","gmh6o0_XeFg","RVw4Q51pX2s","GxlS1ZDxhi4","qERJqp_F4-s","pWQFPxgqwqw","KLVnBQSIKlc","45w_lgWH8wQ","OYoaLzobQmk","iPZpubaiZPo","AsQLwwwcth0","qjjHKDn12qI","MefTPoeVQ3w","4S00XN-0kWg","MD-dVXIcVng","05Io6lop3mk","I4jUMWFKPTY","ahJYUVDY5ek","HiqyQlaZIuc","Ao9cVhwPg84","yKW4F0Nu-UY","9va0KPrVExs","VsyBzIeF1zI","gjTaxhqfA0I","hrSu5pBxqfc","NPuLhxfKoRU","LTglday5zak","dBsnfUieAqs","qhcSEH_rs4Y","3JAqrRnKFHo","52YP4CLNVHs","TJj7t2mrpxc","9wTGKpq3Ugk","SKZO6BfQf5g","OxGjbHzxQSI","xA2kL2yjyio","4C2QjywWz3U","XKDngz4egiY","OgOMUpnJfyw","LaTDjjaAwKM","rWKEFXhE0sU","czISLzICp9s","9R4Bkwh9h9c","abOwl9lqfRI","jdPm8JF-ifw","XDsr0mNI3bA","H5M-yzsFDRA","WYF9v2lchxo","CtHJOTjQFLE","muFYAF0M46I","p7StkhRvBIo","_9y0EiXi31A","NEI0eOLcIgc","nkOD1o9hCUg","1cLWKDhBYxo","4xEhJbeho7Q","AcotvBHvz9A","z_GUNEn0Ay4","K-0JRR3F6Wc","JiPQ5HdkICI","nRE8ghM_Fog","rACReNJZHCg","ymWJo3LTNbU","RgSVBZ8gZe4","XwUn64d5Ddk","BYHKBcmx6ZE","7oNdk4N9pSI","h184w7J-wRQ","CfiPnrnAZd0","pifVOztuiys","2VqPhN07r2Q","x0jh26fr8Xg","RSQEuWRmc_o","OUxZRVZWf2s","27efgfFoiCY","zo4ffFteZ3E","t9gjfBnqNQE","Lh6esIKTwOQ","lmPQdYExPlA","saNgbeEe9Tc","LZnkgw2tlFA","2pXyJ7P0B0k","WxcOkTe9NXM","ku7AADIo9to","b3bFi7ooyfY","o06S5_AP7ZU","OdsOmBGAI_U","dNJiU5i_g_g","cUSgC1dkeUA","HsUxKe8F7bg","aejQEAXlT3k","NloOmE1gzW4","7AYCQhlmph4","IhlKHgORrgM","_ZV5140OykE","IRQLRO3dIp8","4sFBojOUSHA","4i3zR4G35Eg","bS-npjjPiUo","VoUYRdNCOcE","yJbVdHj3HIU","6fNnSO5G6hM","r4eqDYkxtBw","sFygJZHTZWQ","8ROaTfBILM8","Pzoo8kXNB_Y","RIb72ok14wE","Tl70Sr3cbsM","IEgKSc_V71Y","lkqtQ61k58E","3MvEmUX-NzM"];
-		App.dataReady = true;
+		// App.videoIds = ["vCp1SjqiE7E","sAVG7rOwiro","xPFjYvZzjEI","kEXZryVOL7Q","CRGBC_EwUCQ","m3Cwqh7sCUM","ACoM-MQ6d0I","bwGz8UFRjeM","0XAI6g-NFkA","d8ZX_PgsdXA","bPDIwMLGqds","1q0OoD2yego","GEOB9eVkRT0","DzsHXX5u2v0","j_L2z0WUqSE","HbZSMZAUCrs","bOYwa2V4mlQ","FnI9OqvuodY","kw7lJ025xYA","o4d8k5U12-k","FPKEC3Hz-tY","v-_SRdkLOJU","bnYEWTaPsC4","U3JEtHZQpaM","CNc0ozETp7U","h309jv-FDro","rkxlvWi3KXc","7Ei8TejYHFs","8egR8xtzvcU","lSRmaMo6d40","s_64FvOnVfY","gn_2__EHjLI","ZRSI2qMz6C0","EiRnJ9ft4WE","ub2QswEBuUI","cdxr3PpErjg","TcX-CBrF9m4","Od06OFzHJJM","Wr4HaaekU6Y","mR-aBIQOCew","yoeLAq_3oKA","gNIXffiELsg","J8bknQjTqKw","sMG6cBm4ROA","c9w1s54isnM","_nh9DJAw2EA","FWQMJPgBm2Q","861B_axO500","P7tdNWzZ004","sh6du1X_sAA","RiRvTnC90jA","7NfSK8fG0K4","9TxzwbV7y6E","dHy5YjdV87k","ZR7tRS0CZ1c","whnS1uokkxU","pZQIb5xAFoQ","jM3gfwqIqDs","9mz7Cdgt1PU","hxfoOsRQGkM","mX1KCfHNmHo","-YYBCNQnYNM","zMk0zt9o87Q","ZJHcIN-KGFQ","oAhvy__nxkk","FeDrfuJXW6Y","WD0LMeUyYVM","MbCHZwQBPR8","DAVaUtB2lUQ","Mj_VnC5grFE","rSl76NfnJkY","VNXXFyCuroY","OZzoIqle1eI","7sPG0m0kHsY","5gQ7VR3FpV4","PNUbXFuEqvs","A_uK2a7sXZo","8TdIVp9r6Zw","UCoCcCvFbZ8","bkqH3eLOsXI","eBdSo-RkYvw","bA-DEYrrLH0","Gc3Gm-3-UkY","KXCiduEnDIY","-EDenXPeARU","POe0Rz2uxBI","5pNtjOYkAbA","FM8OVyPJILQ","bkNu_1TM2R8","jm2cbiN1wTs","94KzmB2bI7s","A-oxWXLhVRk","AKxrB6Vv9o8","ouAUo9jVtAU","lv7HZBKkKow","SYMvOxIsES4","h8DdqWicbeI","vA4Y4kSzGNE","h4eD7TlTNCU","svDl8BwRt4I","99xwiXAJnzQ","UBq1R6BzNBg","ehPjfpY4jcs","q6eIqNpdvlw","BKES8LNvIFs","70uP7oz6y_w","I62EQ5xbDZg","vfuO87nnENc","rrCiRmegR40","0g4UBeaG5fs","8wM5dDvQRI8","EGfxeCtE33c","gE9Omyg6gIE","7GQJCmZF2eQ","nqM_NArVYbc","WBSM2JvFqKM","_akyfMp9ln8","UPhIlT0H0CI","Mk94qHh-eTg","wJLjv19GJrc","pzKTVdzRebQ","TSwQOf4V3fE","90cj4NX87Yk","KdV1MhJtEjM","OBmhoGRDuOE","3csi-2Hrzhg","kWadDtIFPNs","sY6z2hLgYuY","afqDyRROHiQ","1tBOmG0QMbA","GAwoq5Ksb94","XHSU8TZKQ2M","f1aae4AZ080","6FridXUHwYw","TPDQPVxdWik","mqd-aFZ3yqY","-8YpoP7yRE8","hyTw_2qZwYo","dEXYHJ5ZjM8","eHfO8pmaXMg","4EsWHZwwz20","epTxTn7ZfnI","hXeWKsKOI5Y","Hd8SSpqwLtY","RmB1tH6ANiU","1l2CcH0vHDc","MZANi-5a_jU","_xXhTkBpr6E","QLTuKkj3XpY","xir670oorIo","XdKlmyfp5_w","NBG-Dvq9ypM","JJ-J2YD2hSU","rrN2lgRjcrg","CpQ6pqyNw2I","EM4HfNpxSOo","fbk1Kmki5sg","N8gxND1kX6k","4akYMtKfsYE","QwTr0dw2FbQ","BW_JNXwO7dE","-5ICoZOED0g","pHuvs9Qqa5o","aJV5mH3YY70","vWGzRnxGig4","qw0_CFg6paY","hWumOPH2uMY","k6GSMDU5sk4","hZUZqkPMXX8","kBhKSj3qI_0","jTwDF3hUq18","54acHHUqObM","QhZjHmK3Gew","edLA_YHP7Y8","-c-tqai7br0","IfuyaMYapkY","7IPceA0ILAg","GIWapF93q6w","eU4gzQ1iJAU","AZkPC2p8rDg","1Fg11nIIK4w","gKCawALGeXw","vHnZsouY3U8","HyzCauRk6Iw","5diKdBZ8EOI","qsBwVKtvrpg","ZzDrheWDhGw","RocLdMyUG-4","yUKWG11humE","aFsNz5VMyC8","xWRRAw6xzos","LnbavAYULUU","1QW32aiAmPM","2r2a3ryCBYw","0rtB4oNlhqo","GAovNxb_ayE","3b69l1at84A","qgTiERP8bTM","Lf-Y7V2HSzE","f2vWqsLPP4Q","gO5gPdJxe_o","9pG-aENEhpI","9ePQkEvS7ZA","gmh6o0_XeFg","RVw4Q51pX2s","GxlS1ZDxhi4","qERJqp_F4-s","pWQFPxgqwqw","KLVnBQSIKlc","45w_lgWH8wQ","OYoaLzobQmk","iPZpubaiZPo","AsQLwwwcth0","qjjHKDn12qI","MefTPoeVQ3w","4S00XN-0kWg","MD-dVXIcVng","05Io6lop3mk","I4jUMWFKPTY","ahJYUVDY5ek","HiqyQlaZIuc","Ao9cVhwPg84","yKW4F0Nu-UY","9va0KPrVExs","VsyBzIeF1zI","gjTaxhqfA0I","hrSu5pBxqfc","NPuLhxfKoRU","LTglday5zak","dBsnfUieAqs","qhcSEH_rs4Y","3JAqrRnKFHo","52YP4CLNVHs","TJj7t2mrpxc","9wTGKpq3Ugk","SKZO6BfQf5g","OxGjbHzxQSI","xA2kL2yjyio","4C2QjywWz3U","XKDngz4egiY","OgOMUpnJfyw","LaTDjjaAwKM","rWKEFXhE0sU","czISLzICp9s","9R4Bkwh9h9c","abOwl9lqfRI","jdPm8JF-ifw","XDsr0mNI3bA","H5M-yzsFDRA","WYF9v2lchxo","CtHJOTjQFLE","muFYAF0M46I","p7StkhRvBIo","_9y0EiXi31A","NEI0eOLcIgc","nkOD1o9hCUg","1cLWKDhBYxo","4xEhJbeho7Q","AcotvBHvz9A","z_GUNEn0Ay4","K-0JRR3F6Wc","JiPQ5HdkICI","nRE8ghM_Fog","rACReNJZHCg","ymWJo3LTNbU","RgSVBZ8gZe4","XwUn64d5Ddk","BYHKBcmx6ZE","7oNdk4N9pSI","h184w7J-wRQ","CfiPnrnAZd0","pifVOztuiys","2VqPhN07r2Q","x0jh26fr8Xg","RSQEuWRmc_o","OUxZRVZWf2s","27efgfFoiCY","zo4ffFteZ3E","t9gjfBnqNQE","Lh6esIKTwOQ","lmPQdYExPlA","saNgbeEe9Tc","LZnkgw2tlFA","2pXyJ7P0B0k","WxcOkTe9NXM","ku7AADIo9to","b3bFi7ooyfY","o06S5_AP7ZU","OdsOmBGAI_U","dNJiU5i_g_g","cUSgC1dkeUA","HsUxKe8F7bg","aejQEAXlT3k","NloOmE1gzW4","7AYCQhlmph4","IhlKHgORrgM","_ZV5140OykE","IRQLRO3dIp8","4sFBojOUSHA","4i3zR4G35Eg","bS-npjjPiUo","VoUYRdNCOcE","yJbVdHj3HIU","6fNnSO5G6hM","r4eqDYkxtBw","sFygJZHTZWQ","8ROaTfBILM8","Pzoo8kXNB_Y","RIb72ok14wE","Tl70Sr3cbsM","IEgKSc_V71Y","lkqtQ61k58E","3MvEmUX-NzM"];
+		// App.dataReady = true;
 	},
 	startPlayerDL: function(){
 		var tag = document.createElement('script');
@@ -54,12 +142,12 @@ var App = {
 		var counter = App.playerEls.length;
 
 		App.playerEls.forEach(function(el, i){
-			console.log(i);
+			
 			App.players.push(new Player(el, App.popId(), i));
 			
 			App.players[i].on('ready', function(){
 				counter--;
-				console.log(counter);
+				
 				App.players[i].off('ready');
 				if(counter === 0) App.startPlayer();
 			});
@@ -70,10 +158,10 @@ var App = {
 	startPlayer: function(){
 		document.getElementsByClassName('container')[0].setAttribute('class', 'container');
 		App.players[0].play();
-		window.setTimeout(App.advancePlayer, 3500);
+		window.setTimeout(App.advancePlayer, 1500);
 	},
 	advancePlayer: function(){
-		console.log("PLAYER ADVANCING");
+		
 		if(!App.players[1].videoReady){ 
 			App.moveToBack(App.players[1]);
 			return this.timeout = window.setTimeout(App.advancePlayer, 500);
@@ -82,23 +170,23 @@ var App = {
 		App.players[1].play();
 		App.players[0].stop(App.popId());
 		App.players.push(App.players.shift());
-		console.log("Videos Remaining: " + App.videoIds.length );
-		this.timeout = window.setTimeout(App.advancePlayer, 3500);
+		
+		this.timeout = window.setTimeout(App.advancePlayer, 1500);
 	},
 	popId: function(){
 		if(App.videoIds.length === 0){
-			App.videoIds = App.playedIds;
-			App.playedIds = [];
+			App.videoIds = MobileApp.playedUrls;
+			MobileApp.playedUrls = [];
 		}
 		var index = Math.floor( Math.random() * App.videoIds.length);
 		var id = App.videoIds[index];
-		App.playedIds.push(id);
+		MobileApp.playedUrls.push(id);
 		App.videoIds.splice(index, 1);
 
 		return id;
 	},
 	removeId: function(id){
-		App.playedIds.indexOf(id) !== -1 ? App.playedIds.splice(App.playedIds.indexOf(id), 1) : App.videoIds.splice(App.videoIds.indexOf(id))
+		MobileApp.playedUrls.indexOf(id) !== -1 ? MobileApp.playedUrls.splice(MobileApp.playedUrls.indexOf(id), 1) : App.videoIds.splice(App.videoIds.indexOf(id))
 	},
 	moveToBack: function(player){
 		var index = this.players.indexOf(player);
@@ -113,11 +201,11 @@ var Player = function(el, first, id){
 	this.playing = false;
 	this.queueing = false;
 	this.events = {};
-	this.yt = new YT.Player(el, {height: 390, width: 640});
+	this.yt = new YT.Player(el, {height: 390, width: 640, playerVars: { controls: 0, modestbranding: 1, iv_load_policy: 3, disablekb: 1, rel: 0, showinfo: 0}});
 	this.el = this.yt.c;
 	this.videoReady = false;
 	this.currentId = first;
-	console.log(first);
+	
 
 	this.yt.addEventListener('onReady', function loader(e){
 		self.addEvents();
@@ -125,7 +213,7 @@ var Player = function(el, first, id){
 	});
 
 	this.yt.addEventListener('onError', function(e){
-		console.log(self._id, ': error');
+		
 		if(e.data == 2) App.removeId(self.currentId);
 		if(this.playing){ 
 			window.clearTimeout(App.timeout);
@@ -141,7 +229,7 @@ Player.prototype.addEvents = function(){
 
 	this.yt.addEventListener('onStateChange', function bufferer(e){
 		if(e.data !== 5) return;
-		console.log(self._id, ': queue');
+		
 		self.queue(e.target);
 	});
 
@@ -153,7 +241,7 @@ Player.prototype.addEvents = function(){
 
 		self.queueing = true;
 		e.target.seekTo(start, true);
-		console.log(self._id,': seek');
+		
 	});
 
 	this.yt.addEventListener('onStateChange', function waiter(e){
@@ -162,7 +250,7 @@ Player.prototype.addEvents = function(){
 		self.queueing = false;
 		self.videoReady = true;
 		self.trigger('ready');
-		console.log(self._id, ': pause');
+		
 
 	});
 };
@@ -183,7 +271,7 @@ Player.prototype.load = function(id){
 };
 
 Player.prototype.play = function(){
-	console.log(this._id, ': play');
+	
 	this.playing = true;
 	this.yt.playVideo();
 	this.el.setAttribute('class', 'player playing');
@@ -192,11 +280,11 @@ Player.prototype.play = function(){
 Player.prototype.stop = function(id){
 	var self = this;
 	this.el.setAttribute('class', 'player loading');
-	console.log(this._id, ': stop');
+	
 	window.setTimeout(function(){
 		self.yt.stopVideo();
 		self.load(id);
-	}, 500);
+	}, 1000);
 };
 
 Player.prototype.off = function(event, fn){
@@ -226,4 +314,7 @@ Player.prototype.trigger = function(event){
 };
 
 
-domready(function(){App.init();});
+domready(function(){
+	if(!navigator.userAgent.match(/(iPhone)|(iPad)|(Android)/i)) return App.init();
+	MobileApp.init();
+});

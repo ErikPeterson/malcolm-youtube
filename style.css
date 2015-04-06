@@ -20,7 +20,7 @@ body{
   left: 0;
 }
 
- .loader{
+/* .loader{
   background-color: black;
   position: absolute;
   top: 0;
@@ -33,7 +33,7 @@ body{
 
 .container.loading > .loader{
   opacity: 1;
-}
+}*/
 
 .player{
   display: block;
@@ -44,17 +44,36 @@ body{
   padding: 0;
   top: 0;
   left: 0;
-  transition: all .5s;
+  z-index: 1;
+  overflow: hidden;
+  transition: all 1.5s linear;
+}
+
+.player > img{
+  width: 100%;
+  height: auto;
+  position: absolute;
+  transform: translate(0,50%);
 }
 
 .player.playing{
   opacity: 1;
-  z-index: 1;
 }
 
 .player.loading{
   opacity: 0;
-  z-index: 0;
+}
+
+.screen{
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  top: 0;
+  left: 0;
+  z-index: 999;
 }
 
 #bowlG{
