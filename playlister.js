@@ -11,37 +11,103 @@
  */
 
 var MobileApp = {
-	urls: [],
+	urls: [
+        "gif/3dpyramid.gif",
+        "gif/3dtrench.gif",
+        "gif/armageddonn2.gif",
+        "gif/ayy.gif",
+        "gif/ayy2.gif",
+        "gif/ballsz.gif",
+        "gif/ballsz2.gif",
+        "gif/blueosco.gif",
+        "gif/brainmeter.gif",
+        "gif/brains2.gif",
+        "gif/bubblin.gif",
+        "gif/candy.gif",
+        "gif/cannon.gif",
+        "gif/cannon2.gif",
+        "gif/cells.gif",
+        "gif/cells2.gif",
+        "gif/chaos.gif",
+        "gif/chemicalfire.gif",
+        "gif/chemtrail.gif",
+        "gif/chemtrailz2.gif",
+        "gif/clearbubble.gif",
+        "gif/clouds.gif",
+        "gif/clouds1.gif",
+        "gif/clouds2.gif",
+        "gif/clouds4.gif",
+        "gif/clouds5.gif",
+        "gif/cutting.gif",
+        "gif/cy4.gif",
+        "gif/cy5.gif",
+        "gif/cy6.gif",
+        "gif/cy7.gif",
+        "gif/cymantics.gif",
+        "gif/cymantics2.gif",
+        "gif/cymantics3.gif",
+        "gif/distantship.gif",
+        "gif/distantship2.gif",
+        "gif/downholecam.gif",
+        "gif/earth.gif",
+        "gif/earthbeam.gif",
+        "gif/gastro.gif",
+        "gif/hispeed.gif",
+        "gif/implode.gif",
+        "gif/kissing.gif",
+        "gif/lava.gif",
+        "gif/marfa.gif",
+        "gif/marfa2.gif",
+        "gif/melt2.gif",
+        "gif/mine.gif",
+        "gif/monster.gif",
+        "gif/mouth.gif",
+        "gif/mri.gif",
+        "gif/oilwell2.gif",
+        "gif/oscilascope.gif",
+        "gif/oscoscope2.gif",
+        "gif/oscotv.gif",
+        "gif/party.gif",
+        "gif/phasing.gif",
+        "gif/pinkbubble.gif",
+        "gif/pinkosco.gif",
+        "gif/planet.gif",
+        "gif/platonic.gif",
+        "gif/purphands.gif",
+        "gif/pyramids.gif",
+        "gif/rainbowfire.gif",
+        "gif/rainbowtorch.gif",
+        "gif/redcloud.gif",
+        "gif/reso2.gif",
+        "gif/reso4.gif",
+        "gif/reso5.gif",
+        "gif/resonance.gif",
+        "gif/schlieren.gif",
+        "gif/schlierenfire2.gif",
+        "gif/sex.gif",
+        "gif/space1.gif",
+        "gif/space2.gif",
+        "gif/sulphur.gif",
+        "gif/sunset.gif",
+        "gif/sunspot.gif",
+        "gif/toob.gif",
+        "gif/toobs2.gif",
+        "gif/toobs4.gif",
+        "gif/tube.gif",
+        "gif/underwatertemple.gif",
+        "gif/v9dQ25.gif",
+        "gif/vermillion.gif",
+        "gif/vertices.gif",
+        "gif/volcano.gif",
+        "gif/zar.gif",
+        "gif/zar2.gif"
+	],
 	imgs: [],
 	playedUrls: [],
 	dataReady: false,
 	init: function(){
 		MobileApp.playerEls = Array.prototype.slice.call(document.querySelectorAll('.player'));
-		MobileApp.fetchPlaylist();
-	},
-	fetchPlaylist: function(page){
-		var pagestring = page ? '&pageToken=' + page : '';
-		var sizes = ['maxres','high','medium', 'default'];
-
-		qwest.get('https://www.googleapis.com/youtube/v3/playlistItems?key=AIzaSyAnaVQcV3CqZF3a4L-ql1lf5VpVx6pC-KQ&playlistId=PLArvEia7B_Fyn_GeKqv4s1iBwuYL1Mem-&part=snippet,contentDetails&maxResults=50'+pagestring)
-			.then(function(resp){
-				var data = JSON.parse(resp);
-
-				var urls = data.items.map(function(vid){ 
-
-					var size = sizes.filter(function(siz){ return vid.snippet.thumbnails[siz] !== undefined;})[0];
-					return vid.snippet.thumbnails[size].url;
-				});
-
-				MobileApp.urls = MobileApp.urls.concat(urls);
-				
-				if(!MobileApp.dataReady){
-					MobileApp.dataReady = true;
-					MobileApp.startDl();
-				}
-				
-				if(data.nextPageToken) return MobileApp.fetchPlaylist(data.nextPageToken);	
-		});
+		MobileApp.startDl();
 	},
 	startDl: function(){
 		var len = MobileApp.playerEls.length - 1;
@@ -59,8 +125,9 @@ var MobileApp = {
 		});
 	}, 
 	play: function(){
+		document.getElementsByClassName('container')[0].setAttribute('class', 'container');
 		this.imgs[0].parentElement.setAttribute('class', 'player playing');
-		window.setTimeout(this.advancePlayer.bind(this), 1500);
+		window.setTimeout(this.advancePlayer.bind(this), 3500);
 	},
 	advancePlayer: function(){
 		var self = this;
@@ -77,7 +144,7 @@ var MobileApp = {
 			self.imgs[0].src = MobileApp.popId();
 			self.imgs.push(self.imgs.shift());
 			self.advancePlayer();
-		}, 1500)
+		}, 2500)
 	},
 	popId: function(){
 		if(MobileApp.urls.length === 0){
@@ -158,20 +225,20 @@ var App = {
 	startPlayer: function(){
 		document.getElementsByClassName('container')[0].setAttribute('class', 'container');
 		App.players[0].play();
-		window.setTimeout(App.advancePlayer, 1500);
+		window.setTimeout(App.advancePlayer, 3500);
 	},
 	advancePlayer: function(){
 		
 		if(!App.players[1].videoReady){ 
 			App.moveToBack(App.players[1]);
-			return this.timeout = window.setTimeout(App.advancePlayer, 500);
+			return this.timeout = window.setTimeout(App.advancePlayer, 750);
 		}
 
 		App.players[1].play();
 		App.players[0].stop(App.popId());
 		App.players.push(App.players.shift());
 		
-		this.timeout = window.setTimeout(App.advancePlayer, 1500);
+		this.timeout = window.setTimeout(App.advancePlayer, 3500);
 	},
 	popId: function(){
 		if(App.videoIds.length === 0){
@@ -237,7 +304,7 @@ Player.prototype.addEvents = function(){
 		if(e.data !== 1 || self.playing === true) return;
 
 		var duration = e.target.getDuration(),
-			start = Math.floor(Math.random() * (duration - 5)) + 2;
+			start = Math.floor(Math.random() * (duration - 6));
 
 		self.queueing = true;
 		e.target.seekTo(start, true);
@@ -284,7 +351,7 @@ Player.prototype.stop = function(id){
 	window.setTimeout(function(){
 		self.yt.stopVideo();
 		self.load(id);
-	}, 1000);
+	}, 3500);
 };
 
 Player.prototype.off = function(event, fn){
