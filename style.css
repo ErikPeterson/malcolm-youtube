@@ -112,16 +112,13 @@ iframe.player{
   margin: 2em;
   left: 0;
   bottom: 0;
-  opacity: .05;
+  opacity: 0;
   -webkit-transition: opacity 1s;
   -moz-transition: opacity 1s;
   -ms-transition: opacity 1s;
   transition: opacity 1s;
 }
 
-.soundcloud:hover{
-  opacity: 1;
-}
 
 @media screen and (max-width: 768px){
   .soundcloud{
