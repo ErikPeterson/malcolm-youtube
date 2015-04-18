@@ -120,27 +120,6 @@ iframe.player{
 }
 
 
-@media screen and (max-width: 768px){
-  .soundcloud{
-    bottom: -400px;
-    margin: 0 0 0 -140px;
-    left: 50%;
-    opacity: 1;
-  }
-  .screen{
-    overflow: visible;
-  }
-  body{
-    overflow: scroll;
-  }
-  .container{
-    height: auto;
-    position: relative;
-    height: 100%;
-    overflow: visible;
-  }
-}
-
 .link-box{
   width: auto;
   height: auto;
@@ -151,6 +130,10 @@ iframe.player{
   right: 0;
   bottom: 0;
   position: absolute;
+}
+
+.link-box.left{
+  left: 0;
 }
 
 .link-box > a{
@@ -170,4 +153,36 @@ iframe.player{
   height: 1.5em;
   vertical-align: baseline;
   top: 4px;
+}
+
+@media screen and (max-width: 768px){
+  .soundcloud{
+    bottom: -350px;
+    margin: 0 0 0 -140px;
+    left: 50%;
+    opacity: 1;
+  }
+  .screen{
+    overflow: visible;
+  }
+  body{
+    overflow: scroll;
+  }
+  .container{
+    height: auto;
+    position: relative;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .link-box{
+    box-sizing: border-box;
+    text-align: center;
+    width: 100%;
+  }
+
+  .link-box.left{
+    bottom: -1.5em;
+    text-align: center;
+  }
 }
