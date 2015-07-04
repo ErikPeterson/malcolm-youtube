@@ -144,7 +144,7 @@ var MobileApp = {
 			self.imgs[0].src = MobileApp.popId();
 			self.imgs.push(self.imgs.shift());
 			self.advancePlayer();
-		}, 2500)
+		}, 3500);
 	},
 	popId: function(){
 		if(MobileApp.urls.length === 0){
@@ -269,7 +269,7 @@ var Player = function(el, first, id){
 	this.queueing = false;
 	this.events = {};
 	this.yt = new YT.Player(el, {height: 390, width: 640, playerVars: { controls: 0, modestbranding: 1, iv_load_policy: 3, disablekb: 1, rel: 0, showinfo: 0}});
-	this.el = this.yt.c;
+	this.el = this.yt.f;
 	this.videoReady = false;
 	this.currentId = first;
 	

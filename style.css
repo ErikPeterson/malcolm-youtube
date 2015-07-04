@@ -130,10 +130,12 @@ iframe.player{
   right: 0;
   bottom: 0;
   position: absolute;
+  z-index: 500;
 }
 
 .link-box.left{
   left: 0;
+  right: auto;
 }
 
 .link-box > a{
@@ -153,6 +155,10 @@ iframe.player{
   height: 1.5em;
   vertical-align: baseline;
   top: 4px;
+}
+
+.link-box.left > a > img{
+  height: 2em;
 }
 
 @media screen and (max-width: 768px){
@@ -182,7 +188,8 @@ iframe.player{
   }
 
   .link-box.left{
-    bottom: -1.5em;
+    padding-top: 0;
+    bottom: -2.5em;
     text-align: center;
   }
 }
